@@ -1,13 +1,20 @@
+using Extreme.Net;
+using KABLibrary.DBContext;
+using KABLibrary.Logic.Parser;
+using KABLibrary.Logic.RequestHandler;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+
 
 namespace kab_asp
 {
@@ -23,7 +30,14 @@ namespace kab_asp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddScoped<IBetModelSourceParser, ParimatchParser>();
+            services.AddScoped<HttpClient>(_ => new(new ProxyHandler(new Socks5ProxyClient("127.0.0.1", 9050))));
+            services.AddScoped<IRequestHandler, WebRequestsHandler>();
             services.AddControllersWithViews();
+            services.AddDbContext<KABDBContext>(
+                options => options.UseSqlServer(Configuration.GetConnectionString("KABDB"),
+                builder => builder.MigrationsAssembly("KABMigrations")
+            ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
